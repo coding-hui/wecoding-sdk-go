@@ -337,7 +337,7 @@ linters-settings:
       - google.golang.org/grpc
       - github.com/coding-hui/api
       - github.com/coding-hui/common
-      - github.com/coding-hui/iam-sdk-go
+      - github.com/coding-hui/wecoding-sdk-go
 
     # Allow to not explain why the version has been retracted in the `retract` directives. Default is false.
     retract-allow-no-explanation: false
