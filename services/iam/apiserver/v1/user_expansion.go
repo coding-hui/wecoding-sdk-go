@@ -17,7 +17,7 @@ func (c *nodes) PatchStatus(ctx context.Context, nodeName string, data []byte) (
 	result := &v1.Node{}
 	err := c.client.Patch(types.StrategicMergePatchType).
 		Resource("nodes").
-		ID(nodeName).
+		Name(nodeName).
 		SubResource("status").
 		Body(data).
 		Do(ctx).

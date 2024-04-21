@@ -12,11 +12,10 @@ import (
 	"path/filepath"
 
 	"github.com/coding-hui/common/util/homedir"
-
 	v1 "github.com/coding-hui/iam/pkg/api/authzserver/v1"
 
+	"github.com/coding-hui/wecoding-sdk-go/services"
 	"github.com/coding-hui/wecoding-sdk-go/tools/clientcmd"
-	"github.com/coding-hui/wecoding-sdk-go/wecoding"
 )
 
 func main() {
@@ -39,7 +38,7 @@ func main() {
 	}
 
 	// create the clientset
-	clientset, err := wecoding.NewForConfig(config)
+	clientset, err := services.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}

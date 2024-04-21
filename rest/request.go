@@ -41,9 +41,9 @@ type Request struct {
 	// structural elements of the request that are part of the IAM API conventions
 	// namespace    string
 	// namespaceSet bool
-	resource    string
-	resourceId  string
-	subresource string
+	resource     string
+	resourceName string
+	subresource  string
 
 	// output
 	err  error
@@ -125,7 +125,7 @@ func (r *Request) Verb(verb string) *Request {
 }
 
 // Prefix adds segments to the relative beginning to the request path. These
-// items will be placed before the optional Namespace, Resource, or ID sections.
+// items will be placed before the optional Namespace, Resource, or Name sections.
 // Setting AbsPath will clear any previously set Prefix segments.
 func (r *Request) Prefix(segments ...string) *Request {
 	if r.err != nil {
@@ -138,7 +138,7 @@ func (r *Request) Prefix(segments ...string) *Request {
 }
 
 // Suffix appends segments to the end of the path. These items will be placed after the prefix and optional
-// Namespace, Resource, or ID sections.
+// Namespace, Resource, or Name sections.
 func (r *Request) Suffix(segments ...string) *Request {
 	if r.err != nil {
 		return r
@@ -196,28 +196,28 @@ func (r *Request) SubResource(subresources ...string) *Request {
 	return r
 }
 
-// ID sets the name of a resource to access (<resource>/[ns/<namespace>/]<id>).
-func (r *Request) ID(id string) *Request {
+// Name sets the name of a resource to access (<resource>/[ns/<namespace>/]<name>).
+func (r *Request) Name(name string) *Request {
 	if r.err != nil {
 		return r
 	}
 
-	if len(id) == 0 {
+	if len(name) == 0 {
 		r.err = fmt.Errorf("resource id may not be empty")
 		return r
 	}
 
-	if len(r.resourceId) != 0 {
-		r.err = fmt.Errorf("resource id already set to %q, cannot change to %q", r.resourceId, id)
+	if len(r.resourceName) != 0 {
+		r.err = fmt.Errorf("resource id already set to %q, cannot change to %q", r.resourceName, name)
 		return r
 	}
 
-	if msgs := IsValidPathSegmentName(id); len(msgs) != 0 {
-		r.err = fmt.Errorf("invalid resource id %q: %v", id, msgs)
+	if msgs := IsValidPathSegmentName(name); len(msgs) != 0 {
+		r.err = fmt.Errorf("invalid resource name %q: %v", name, msgs)
 		return r
 	}
 
-	r.resourceId = id
+	r.resourceName = name
 
 	return r
 }
@@ -336,8 +336,8 @@ func (r *Request) URL() *url.URL {
 	}
 	// Join trims trailing slashes, so preserve r.pathPrefix's trailing slash
 	// for backwards compatibility if nothing was changed
-	if len(r.resourceId) != 0 || len(r.subpath) != 0 || len(r.subresource) != 0 {
-		p = path.Join(p, r.resourceId, r.subresource, r.subpath)
+	if len(r.resourceName) != 0 || len(r.subpath) != 0 || len(r.subresource) != 0 {
+		p = path.Join(p, r.resourceName, r.subresource, r.subpath)
 	}
 
 	finalURL := &url.URL{}

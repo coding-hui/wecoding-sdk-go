@@ -2,11 +2,11 @@
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
 
-package wecoding
+package services
 
 import (
 	"github.com/coding-hui/wecoding-sdk-go/rest"
-	"github.com/coding-hui/wecoding-sdk-go/wecoding/iam"
+	"github.com/coding-hui/wecoding-sdk-go/services/iam"
 )
 
 // Interface defines method used to return client interface used by coding-hui organization.

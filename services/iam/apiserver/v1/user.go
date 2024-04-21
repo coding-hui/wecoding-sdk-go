@@ -23,12 +23,7 @@ type UsersGetter interface {
 type UserInterface interface {
 	Get(ctx context.Context, id string, opts metav1.GetOptions) (*v1.DetailUserResponse, error)
 	Create(ctx context.Context, user *v1.CreateUserRequest, opts metav1.CreateOptions) (*v1.CreateUserResponse, error)
-	Update(
-		ctx context.Context,
-		id string,
-		user *v1.UpdateUserRequest,
-		opts metav1.UpdateOptions,
-	) (*v1.UpdateUserResponse, error)
+	Update(ctx context.Context, id string, user *v1.UpdateUserRequest, opts metav1.UpdateOptions) (*v1.UpdateUserResponse, error)
 	Delete(ctx context.Context, id string, opts metav1.DeleteOptions) error
 	List(ctx context.Context, opts metav1.ListOptions) (*v1.UserList, error)
 	Disable(ctx context.Context, id string) error
@@ -54,7 +49,7 @@ func (c *users) Get(ctx context.Context, id string, opts metav1.GetOptions) (res
 	err = c.client.Get().
 		Resource("users").
 		VersionedParams(opts).
-		ID(id).
+		Name(id).
 		Do(ctx).
 		Into(result)
 
@@ -63,11 +58,7 @@ func (c *users) Get(ctx context.Context, id string, opts metav1.GetOptions) (res
 
 // Create takes the representation of a user and creates it.
 // Returns the server's representation of the user, and an error, if there is any.
-func (c *users) Create(
-	ctx context.Context,
-	user *v1.CreateUserRequest,
-	opts metav1.CreateOptions,
-) (result *v1.CreateUserResponse, err error) {
+func (c *users) Create(ctx context.Context, user *v1.CreateUserRequest, opts metav1.CreateOptions) (result *v1.CreateUserResponse, err error) {
 	result = &v1.CreateUserResponse{}
 	err = c.client.Post().
 		Resource("users").
@@ -81,17 +72,12 @@ func (c *users) Create(
 
 // Update takes the representation of a user and updates it.
 // Returns the server's representation of the user, and an error, if there is any.
-func (c *users) Update(
-	ctx context.Context,
-	id string,
-	user *v1.UpdateUserRequest,
-	opts metav1.UpdateOptions,
-) (result *v1.UpdateUserResponse, err error) {
+func (c *users) Update(ctx context.Context, id string, user *v1.UpdateUserRequest, opts metav1.UpdateOptions) (result *v1.UpdateUserResponse, err error) {
 	result = &v1.UpdateUserResponse{}
 	err = c.client.Put().
 		Resource("users").
 		VersionedParams(opts).
-		ID(id).
+		Name(id).
 		Body(user).
 		Do(ctx).
 		Into(result)
@@ -103,7 +89,7 @@ func (c *users) Update(
 func (c *users) Delete(ctx context.Context, id string, opts metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("users").
-		ID(id).
+		Name(id).
 		Body(&opts).
 		Do(ctx).
 		Error()
@@ -125,7 +111,7 @@ func (c *users) List(ctx context.Context, opts metav1.ListOptions) (result *v1.U
 func (c *users) Disable(ctx context.Context, id string) error {
 	return c.client.Get().
 		Resource("users").
-		ID(id).
+		Name(id).
 		SubResource("disable").
 		Do(ctx).
 		Error()
@@ -135,7 +121,7 @@ func (c *users) Disable(ctx context.Context, id string) error {
 func (c *users) Enable(ctx context.Context, id string) error {
 	return c.client.Get().
 		Resource("users").
-		ID(id).
+		Name(id).
 		SubResource("enable").
 		Do(ctx).
 		Error()

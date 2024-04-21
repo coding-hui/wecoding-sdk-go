@@ -12,11 +12,10 @@ import (
 	"path/filepath"
 
 	"github.com/coding-hui/common/util/homedir"
-
 	v1 "github.com/coding-hui/iam/pkg/api/authzserver/v1"
 
+	authzclientv1 "github.com/coding-hui/wecoding-sdk-go/services/iam/authz/v1"
 	"github.com/coding-hui/wecoding-sdk-go/tools/clientcmd"
-	authzclientv1 "github.com/coding-hui/wecoding-sdk-go/wecoding/iam/authz/v1"
 )
 
 func main() {

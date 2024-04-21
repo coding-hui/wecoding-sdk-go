@@ -6,8 +6,8 @@ package iam
 
 import (
 	"github.com/coding-hui/wecoding-sdk-go/rest"
-	apiv1 "github.com/coding-hui/wecoding-sdk-go/wecoding/iam/apiserver/v1"
-	authzv1 "github.com/coding-hui/wecoding-sdk-go/wecoding/iam/authz/v1"
+	apiv1 "github.com/coding-hui/wecoding-sdk-go/services/iam/apiserver/v1"
+	authzv1 "github.com/coding-hui/wecoding-sdk-go/services/iam/authz/v1"
 )
 
 // IamInterface holds the methods that iam server-supported API services,

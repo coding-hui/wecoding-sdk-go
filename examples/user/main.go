@@ -10,7 +10,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	v1 "github.com/coding-hui/iam/pkg/api/apiserver/v1"
 	"os"
 	"path/filepath"
 
@@ -18,9 +17,10 @@ import (
 
 	metav1 "github.com/coding-hui/common/meta/v1"
 	"github.com/coding-hui/common/util/homedir"
+	v1 "github.com/coding-hui/iam/pkg/api/apiserver/v1"
 
+	"github.com/coding-hui/wecoding-sdk-go/services/iam"
 	"github.com/coding-hui/wecoding-sdk-go/tools/clientcmd"
-	"github.com/coding-hui/wecoding-sdk-go/wecoding/iam"
 )
 
 func main() {
