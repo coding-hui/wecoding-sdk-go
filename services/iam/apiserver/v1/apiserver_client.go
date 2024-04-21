@@ -15,6 +15,7 @@ import (
 type APIV1Interface interface {
 	RESTClient() rest.Interface
 	UsersGetter
+	AuthenticationGetter
 }
 
 // APIV1Client is used to interact with features provided by the group.
@@ -25,6 +26,11 @@ type APIV1Client struct {
 // Users create and return user rest client.
 func (c *APIV1Client) Users() UserInterface {
 	return newUsers(c)
+}
+
+// Authentication create and return user rest client.
+func (c *APIV1Client) Authentication() AuthenticationInterface {
+	return newAuthentication(c)
 }
 
 // NewForConfig creates a new APIV1Client for the given config.
