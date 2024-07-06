@@ -258,7 +258,14 @@ func (o *Model) parseStreamingChatResponse(
 		}
 	}()
 
-	return o.combineStreamingChatResponse(ctx, responseChan, streamingFunc)
+	response, err := o.combineStreamingChatResponse(ctx, responseChan, streamingFunc)
+	if err != nil {
+		return nil, err
+	}
+	if o.CallbacksHandler != nil {
+		o.CallbacksHandler.HandleLLMGenerateContentEnd(ctx, response)
+	}
+	return response, nil
 }
 
 func (o *Model) combineStreamingChatResponse(
