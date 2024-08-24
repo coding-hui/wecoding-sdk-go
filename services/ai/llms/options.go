@@ -43,6 +43,8 @@ type CallOptions struct {
 	FrequencyPenalty float64 `json:"frequency_penalty"`
 	// PresencePenalty is the presence penalty for sampling.
 	PresencePenalty float64 `json:"presence_penalty"`
+	// SupportMultiContent multiContent is supported
+	SupportMultiContent bool `json:"support_multi_content"`
 
 	// JSONMode is a flag to enable JSON mode.
 	JSONMode bool `json:"json"`
@@ -241,5 +243,12 @@ func WithJSONMode() CallOption {
 func WithMetadata(metadata map[string]interface{}) CallOption {
 	return func(o *CallOptions) {
 		o.Metadata = metadata
+	}
+}
+
+// WithMultiContent SupportMultiContent multiContent is supported
+func WithMultiContent(supportMultiContent bool) CallOption {
+	return func(o *CallOptions) {
+		o.SupportMultiContent = supportMultiContent
 	}
 }

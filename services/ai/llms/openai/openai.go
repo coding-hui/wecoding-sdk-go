@@ -15,6 +15,7 @@ import (
 	sdk "github.com/sashabaranov/go-openai"
 
 	"github.com/coding-hui/common/errors"
+
 	"github.com/coding-hui/wecoding-sdk-go/services/ai/callbacks"
 	"github.com/coding-hui/wecoding-sdk-go/services/ai/llms"
 )
@@ -102,7 +103,11 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 
 	chatMsgs := make([]sdk.ChatCompletionMessage, 0, len(messages))
 	for _, mc := range messages {
-		msg := sdk.ChatCompletionMessage{MultiContent: messagePartsFromParts(mc.Parts)}
+		content, multiContent := messagePartsFromParts(mc.Parts)
+		msg := sdk.ChatCompletionMessage{Content: content}
+		if opts.SupportMultiContent {
+			msg = sdk.ChatCompletionMessage{MultiContent: multiContent}
+		}
 		switch mc.Role {
 		case llms.ChatMessageTypeSystem:
 			msg.Role = RoleSystem
@@ -342,8 +347,9 @@ func updateToolCalls(tools []llms.ToolCall, delta []sdk.ToolCall) ([]byte, []llm
 	return chunk, tools
 }
 
-func messagePartsFromParts(parts []llms.ContentPart) []sdk.ChatMessagePart {
+func messagePartsFromParts(parts []llms.ContentPart) (string, []sdk.ChatMessagePart) {
 	var content []sdk.ChatMessagePart
+	fullContent := ""
 	for _, part := range parts {
 		switch p := part.(type) {
 		case llms.TextContent:
@@ -352,6 +358,7 @@ func messagePartsFromParts(parts []llms.ContentPart) []sdk.ChatMessagePart {
 				Text:     p.Text,
 				ImageURL: nil,
 			})
+			fullContent += p.Text
 		case llms.ImageURLContent:
 			content = append(content, sdk.ChatMessagePart{
 				Type: sdk.ChatMessagePartTypeText,
@@ -362,7 +369,7 @@ func messagePartsFromParts(parts []llms.ContentPart) []sdk.ChatMessagePart {
 			})
 		}
 	}
-	return content
+	return fullContent, content
 }
 
 // toolFromTool converts an llms.Tool to a Tool.
