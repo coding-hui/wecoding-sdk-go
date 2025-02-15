@@ -13,7 +13,7 @@ type ChatPromptValue []llms.ChatMessage
 
 // String returns the chat message slice as a buffer string.
 func (v ChatPromptValue) String() string {
-	s, err := llms.GetBufferString(v, "Human", "AI")
+	s, err := llms.GetBufferString(v, "system", "Human", "AI")
 	if err == nil {
 		return s
 	}
