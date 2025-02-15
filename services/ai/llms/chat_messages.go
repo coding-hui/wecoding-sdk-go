@@ -166,7 +166,10 @@ func GetBufferString(messages []ChatMessage, systemPrefix, humanPrefix string, a
 		if err != nil {
 			return "", err
 		}
-		msg := fmt.Sprintf("%s: %s", role, m.GetContent())
+		msg := m.GetContent()
+		if len(strings.TrimSpace(role)) > 0 {
+			msg = fmt.Sprintf("%s: %s", role, m.GetContent())
+		}
 		if m, ok := m.(AIChatMessage); ok && m.FunctionCall != nil {
 			j, err := json.Marshal(m.FunctionCall)
 			if err != nil {
