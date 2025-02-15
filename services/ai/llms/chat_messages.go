@@ -159,10 +159,10 @@ func (m ToolChatMessage) GetID() string {
 }
 
 // GetBufferString gets the buffer string of messages.
-func GetBufferString(messages []ChatMessage, humanPrefix string, aiPrefix string) (string, error) {
+func GetBufferString(messages []ChatMessage, systemPrefix, humanPrefix string, aiPrefix string) (string, error) {
 	var result []string
 	for _, m := range messages {
-		role, err := getMessageRole(m, humanPrefix, aiPrefix)
+		role, err := getMessageRole(m, systemPrefix, humanPrefix, aiPrefix)
 		if err != nil {
 			return "", err
 		}
@@ -179,7 +179,7 @@ func GetBufferString(messages []ChatMessage, humanPrefix string, aiPrefix string
 	return strings.Join(result, "\n"), nil
 }
 
-func getMessageRole(m ChatMessage, humanPrefix, aiPrefix string) (string, error) {
+func getMessageRole(m ChatMessage, systemPrefix, humanPrefix, aiPrefix string) (string, error) {
 	var role string
 	switch m.GetType() {
 	case ChatMessageTypeHuman:
@@ -187,7 +187,7 @@ func getMessageRole(m ChatMessage, humanPrefix, aiPrefix string) (string, error)
 	case ChatMessageTypeAI:
 		role = aiPrefix
 	case ChatMessageTypeSystem:
-		role = "system"
+		role = systemPrefix
 	case ChatMessageTypeGeneric:
 		cgm, ok := m.(GenericChatMessage)
 		if !ok {
