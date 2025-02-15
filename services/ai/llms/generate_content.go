@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"time"
 )
 
 // MessageContent is the content of a message sent to a LLM. It has a role and a
@@ -175,6 +176,9 @@ type CompletionTokensDetails struct {
 }
 
 type Usage struct {
+	FirstTokenTime          time.Duration           `json:"first_token_time"`
+	TotalTime               time.Duration           `json:"total_time"`
+	AverageTokensPerSecond  float64                 `json:"average_tokens_per_second"`
 	PromptTokens            int                     `json:"prompt_tokens"`
 	CompletionTokens        int                     `json:"completion_tokens"`
 	TotalTokens             int                     `json:"total_tokens"`

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	sdk "github.com/volcengine/volcengine-go-sdk/service/arkruntime"
 	chat "github.com/volcengine/volcengine-go-sdk/service/arkruntime/model"
@@ -60,6 +61,8 @@ func NewClientWithConfig(apiKey, ak, sk string, opts ...Option) (*Model, error) 
 
 // GenerateContent implements the Model interface.
 func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageContent, options ...llms.CallOption) (*llms.ContentResponse, error) { //nolint: lll, cyclop, goerr113, funlen
+	startTime := time.Now()
+
 	if o.CallbacksHandler != nil {
 		o.CallbacksHandler.HandleLLMGenerateContentStart(ctx, messages)
 	}
@@ -113,7 +116,7 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 	}
 
 	if opts.StreamingFunc != nil {
-		return o.parseStreamingChatResponse(ctx, req, opts.StreamingFunc)
+		return o.parseStreamingChatResponse(ctx, startTime, req, opts.StreamingFunc)
 	}
 
 	result, err := o.client.CreateChatCompletion(ctx, req)
@@ -136,12 +139,16 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 		}
 	}
 
+	totalDuration := time.Since(startTime)
 	response := &llms.ContentResponse{
 		Choices: choices,
 		Usage: llms.Usage{
-			PromptTokens:     result.Usage.PromptTokens,
-			CompletionTokens: result.Usage.CompletionTokens,
-			TotalTokens:      result.Usage.TotalTokens,
+			TotalTime:              totalDuration,
+			FirstTokenTime:         totalDuration,
+			AverageTokensPerSecond: float64(result.Usage.TotalTokens) / totalDuration.Seconds(),
+			PromptTokens:           result.Usage.PromptTokens,
+			CompletionTokens:       result.Usage.CompletionTokens,
+			TotalTokens:            result.Usage.TotalTokens,
 			PromptTokensDetails: llms.PromptTokensDetail{
 				CachedTokens: result.Usage.PromptTokensDetails.CachedTokens,
 			},
@@ -159,6 +166,7 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 
 func (o *Model) parseStreamingChatResponse(
 	ctx context.Context,
+	startTime time.Time,
 	req chat.ChatCompletionRequest,
 	streamingFunc func(ctx context.Context, chunk []byte) error,
 ) (*llms.ContentResponse, error) {
@@ -196,7 +204,7 @@ func (o *Model) parseStreamingChatResponse(
 		}
 	}()
 
-	response, err := o.combineStreamingChatResponse(ctx, responseChan, streamingFunc)
+	response, err := o.combineStreamingChatResponse(ctx, startTime, responseChan, streamingFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -210,9 +218,11 @@ func (o *Model) parseStreamingChatResponse(
 
 func (o *Model) combineStreamingChatResponse(
 	ctx context.Context,
+	startTime time.Time,
 	responseChan chan chat.ChatCompletionStreamResponse,
 	streamingFunc func(ctx context.Context, chunk []byte) error,
 ) (*llms.ContentResponse, error) {
+	var hasFirstToken bool
 	response := llms.ContentResponse{
 		Choices: []*llms.ContentChoice{
 			{},
@@ -249,12 +259,22 @@ func (o *Model) combineStreamingChatResponse(
 			chunk = []byte(volcengine.StringValue(choice.Delta.ReasoningContent))
 		}
 
+		if !hasFirstToken && choice.Delta.Content != "" {
+			response.Usage.FirstTokenTime = time.Since(startTime)
+			hasFirstToken = true
+		}
+
 		if streamingFunc != nil {
 			err := streamingFunc(ctx, chunk)
 			if err != nil {
 				return nil, fmt.Errorf("streaming func returned an error: %w", err)
 			}
 		}
+	}
+
+	response.Usage.TotalTime = time.Since(startTime)
+	if response.Usage.TotalTime.Seconds() > 0 {
+		response.Usage.AverageTokensPerSecond = float64(response.Usage.TotalTokens) / response.Usage.TotalTime.Seconds()
 	}
 
 	return &response, nil

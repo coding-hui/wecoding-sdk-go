@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	sdk "github.com/sashabaranov/go-openai"
 
@@ -88,6 +89,8 @@ func New(opts ...Option) (*Model, error) {
 
 // GenerateContent implements the Model interface.
 func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageContent, options ...llms.CallOption) (*llms.ContentResponse, error) { //nolint: lll, cyclop, goerr113, funlen
+	startTime := time.Now()
+
 	if o.CallbacksHandler != nil {
 		o.CallbacksHandler.HandleLLMGenerateContentStart(ctx, messages)
 	}
@@ -169,7 +172,7 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 	}
 
 	if opts.StreamingFunc != nil {
-		return o.parseStreamingChatResponse(ctx, req, opts.StreamingFunc)
+		return o.parseStreamingChatResponse(ctx, startTime, req, opts.StreamingFunc)
 	}
 
 	result, err := o.client.CreateChatCompletion(ctx, req)
@@ -212,9 +215,10 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 			choices[i].FuncCall = choices[i].ToolCalls[0].FunctionCall
 		}
 	}
+
 	response := &llms.ContentResponse{
 		Choices: choices,
-		Usage:   getUsage(&result.Usage),
+		Usage:   getUsage(&result.Usage, startTime, 0),
 	}
 	if o.CallbacksHandler != nil {
 		o.CallbacksHandler.HandleLLMGenerateContentEnd(ctx, response)
@@ -224,6 +228,7 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 
 func (o *Model) parseStreamingChatResponse(
 	ctx context.Context,
+	startTime time.Time,
 	req sdk.ChatCompletionRequest,
 	streamingFunc func(ctx context.Context, chunk []byte) error,
 ) (*llms.ContentResponse, error) {
@@ -261,7 +266,7 @@ func (o *Model) parseStreamingChatResponse(
 		}
 	}()
 
-	response, err := o.combineStreamingChatResponse(ctx, responseChan, streamingFunc)
+	response, err := o.combineStreamingChatResponse(ctx, startTime, responseChan, streamingFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -273,9 +278,12 @@ func (o *Model) parseStreamingChatResponse(
 
 func (o *Model) combineStreamingChatResponse(
 	ctx context.Context,
+	startTime time.Time,
 	responseChan chan sdk.ChatCompletionStreamResponse,
 	streamingFunc func(ctx context.Context, chunk []byte) error,
 ) (*llms.ContentResponse, error) {
+	var hasFirstToken bool
+	var firstTokenTime time.Duration
 	response := llms.ContentResponse{
 		Choices: []*llms.ContentChoice{
 			{},
@@ -285,7 +293,7 @@ func (o *Model) combineStreamingChatResponse(
 
 	for streamResponse := range responseChan {
 		if streamResponse.Usage != nil {
-			response.Usage = getUsage(streamResponse.Usage)
+			response.Usage = getUsage(streamResponse.Usage, startTime, firstTokenTime)
 		}
 
 		if len(streamResponse.Choices) == 0 {
@@ -295,6 +303,11 @@ func (o *Model) combineStreamingChatResponse(
 		chunk := []byte(choice.Delta.Content)
 		response.Choices[0].Content += choice.Delta.Content
 		response.Choices[0].StopReason = fmt.Sprint(choice.FinishReason)
+
+		if !hasFirstToken && choice.Delta.Content != "" {
+			firstTokenTime = time.Since(startTime)
+			hasFirstToken = true
+		}
 
 		if len(choice.Delta.ToolCalls) > 0 {
 			chunk, response.Choices[0].ToolCalls = updateToolCalls(response.Choices[0].ToolCalls, choice.Delta.ToolCalls)
@@ -432,12 +445,20 @@ func isAzureApi(apiType APIType) bool {
 	return apiType == APITypeAzure || apiType == APITypeAzureAD
 }
 
-func getUsage(res *sdk.Usage) llms.Usage {
+func getUsage(res *sdk.Usage, startTime time.Time, firstTokenTime time.Duration) llms.Usage {
 	if res == nil {
 		return llms.Usage{}
 	}
 
+	totalDuration := time.Since(startTime)
+	if firstTokenTime.Seconds() <= 0 {
+		firstTokenTime = totalDuration
+	}
+
 	usage := llms.Usage{
+		TotalTime:               totalDuration,
+		FirstTokenTime:          firstTokenTime,
+		AverageTokensPerSecond:  float64(res.TotalTokens) / time.Since(startTime).Seconds(),
 		PromptTokens:            res.PromptTokens,
 		CompletionTokens:        res.CompletionTokens,
 		TotalTokens:             res.TotalTokens,
