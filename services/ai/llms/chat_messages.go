@@ -7,7 +7,7 @@ package llms
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"log"
 	"strings"
 
 	"github.com/coding-hui/common/errors"
@@ -48,6 +48,11 @@ type Named interface {
 	GetName() string
 }
 
+// Reasoning is an interface for objects that have a reasoning content.
+type Reasoning interface {
+	GetReasoningContent() string
+}
+
 // Statically assert that the types implement the interface.
 var (
 	_ ChatMessage = AIChatMessage{}
@@ -62,6 +67,9 @@ type AIChatMessage struct {
 	// Content is the content of the message.
 	Content string `json:"content,omitempty"`
 
+	// ReasoningContent is the reasoning content of a response
+	ReasoningContent string `json:"reasoning_content,omitempty"`
+
 	// FunctionCall represents the model choosing to call a function.
 	FunctionCall *FunctionCall `json:"function_call,omitempty"`
 
@@ -69,25 +77,47 @@ type AIChatMessage struct {
 	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
 }
 
-func (m AIChatMessage) GetType() ChatMessageType       { return ChatMessageTypeAI }
-func (m AIChatMessage) GetContent() string             { return m.Content }
-func (m AIChatMessage) GetFunctionCall() *FunctionCall { return m.FunctionCall }
+func (m AIChatMessage) GetType() ChatMessageType {
+	return ChatMessageTypeAI
+}
+
+func (m AIChatMessage) GetContent() string {
+	return m.Content
+}
+
+func (m AIChatMessage) GetFunctionCall() *FunctionCall {
+	return m.FunctionCall
+}
+
+func (m AIChatMessage) GetReasoningContent() string {
+	return m.ReasoningContent
+}
 
 // HumanChatMessage is a message sent by a human.
 type HumanChatMessage struct {
 	Content string
 }
 
-func (m HumanChatMessage) GetType() ChatMessageType { return ChatMessageTypeHuman }
-func (m HumanChatMessage) GetContent() string       { return m.Content }
+func (m HumanChatMessage) GetType() ChatMessageType {
+	return ChatMessageTypeHuman
+}
+
+func (m HumanChatMessage) GetContent() string {
+	return m.Content
+}
 
 // SystemChatMessage is a chat message representing information that should be instructions to the AI system.
 type SystemChatMessage struct {
 	Content string
 }
 
-func (m SystemChatMessage) GetType() ChatMessageType { return ChatMessageTypeSystem }
-func (m SystemChatMessage) GetContent() string       { return m.Content }
+func (m SystemChatMessage) GetType() ChatMessageType {
+	return ChatMessageTypeSystem
+}
+
+func (m SystemChatMessage) GetContent() string {
+	return m.Content
+}
 
 // GenericChatMessage is a chat message with an arbitrary speaker.
 type GenericChatMessage struct {
@@ -96,9 +126,17 @@ type GenericChatMessage struct {
 	Name    string
 }
 
-func (m GenericChatMessage) GetType() ChatMessageType { return ChatMessageTypeGeneric }
-func (m GenericChatMessage) GetContent() string       { return m.Content }
-func (m GenericChatMessage) GetName() string          { return m.Name }
+func (m GenericChatMessage) GetType() ChatMessageType {
+	return ChatMessageTypeGeneric
+}
+
+func (m GenericChatMessage) GetContent() string {
+	return m.Content
+}
+
+func (m GenericChatMessage) GetName() string {
+	return m.Name
+}
 
 // ToolChatMessage is a chat message representing the result of a tool call.
 type ToolChatMessage struct {
@@ -108,9 +146,17 @@ type ToolChatMessage struct {
 	Content string `json:"content"`
 }
 
-func (m ToolChatMessage) GetType() ChatMessageType { return ChatMessageTypeTool }
-func (m ToolChatMessage) GetContent() string       { return m.Content }
-func (m ToolChatMessage) GetID() string            { return m.ID }
+func (m ToolChatMessage) GetType() ChatMessageType {
+	return ChatMessageTypeTool
+}
+
+func (m ToolChatMessage) GetContent() string {
+	return m.Content
+}
+
+func (m ToolChatMessage) GetID() string {
+	return m.ID
+}
 
 // GetBufferString gets the buffer string of messages.
 func GetBufferString(messages []ChatMessage, humanPrefix string, aiPrefix string) (string, error) {
@@ -159,8 +205,9 @@ func getMessageRole(m ChatMessage, humanPrefix, aiPrefix string) (string, error)
 }
 
 type ChatMessageModelData struct {
-	Content string `bson:"content" json:"content"`
-	Type    string `bson:"type"    json:"type"`
+	Content          string `bson:"content" json:"content"`
+	ReasoningContent string `bson:"reasoning_content" json:"reasoning_content"`
+	Type             string `bson:"type"    json:"type"`
 }
 
 type ChatMessageModel struct {
@@ -171,7 +218,7 @@ type ChatMessageModel struct {
 func (c ChatMessageModel) ToChatMessage() ChatMessage {
 	switch c.Type {
 	case string(ChatMessageTypeAI):
-		return AIChatMessage{Content: c.Data.Content}
+		return AIChatMessage{Content: c.Data.Content, ReasoningContent: c.Data.ReasoningContent}
 	case string(ChatMessageTypeHuman):
 		return HumanChatMessage{Content: c.Data.Content}
 	case string(ChatMessageTypeSystem):
@@ -183,7 +230,7 @@ func (c ChatMessageModel) ToChatMessage() ChatMessage {
 	case string(ChatMessageTypeTool):
 		return ToolChatMessage{Content: c.Data.Content}
 	default:
-		slog.Warn("convert to chat message failed with invalid message type", "type", c.Type)
+		log.Println("convert to chat message failed with invalid message type", "type", c.Type)
 		return nil
 	}
 }

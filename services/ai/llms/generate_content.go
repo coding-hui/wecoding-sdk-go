@@ -134,6 +134,9 @@ type ContentChoice struct {
 	// Content is the textual content of a response
 	Content string
 
+	// ReasoningContent is the reasoning content of a response
+	ReasoningContent string
+
 	// StopReason is the reason the model stopped generating output.
 	StopReason string
 
