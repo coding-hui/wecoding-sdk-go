@@ -125,7 +125,8 @@ func (ToolCallResponse) isPart() {}
 // ContentResponse is the response returned by a GenerateContent call.
 // It can potentially return multiple content choices.
 type ContentResponse struct {
-	Choices []*ContentChoice
+	Choices []*ContentChoice `json:"choices"`
+	Usage   Usage            `json:"usage"`
 }
 
 // ContentChoice is one of the response choices returned by GenerateContent
@@ -163,6 +164,22 @@ func TextParts(role ChatMessageType, parts ...string) MessageContent {
 		result.Parts = append(result.Parts, TextPart(part))
 	}
 	return result
+}
+
+type PromptTokensDetail struct {
+	CachedTokens int `json:"cached_tokens"`
+}
+
+type CompletionTokensDetails struct {
+	ReasoningTokens int `json:"reasoning_tokens"`
+}
+
+type Usage struct {
+	PromptTokens            int                     `json:"prompt_tokens"`
+	CompletionTokens        int                     `json:"completion_tokens"`
+	TotalTokens             int                     `json:"total_tokens"`
+	PromptTokensDetails     PromptTokensDetail      `json:"prompt_tokens_details"`
+	CompletionTokensDetails CompletionTokensDetails `json:"completion_tokens_details"`
 }
 
 // ShowMessageContents is a debugging helper for MessageContent.

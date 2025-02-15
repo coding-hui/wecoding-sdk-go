@@ -133,15 +133,23 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 			Content:          volcengine.StringValue(c.Message.Content.StringValue),
 			ReasoningContent: volcengine.StringValue(c.Message.ReasoningContent),
 			StopReason:       fmt.Sprint(c.FinishReason),
-			GenerationInfo: map[string]any{
-				"CompletionTokens": result.Usage.CompletionTokens,
-				"PromptTokens":     result.Usage.PromptTokens,
-				"TotalTokens":      result.Usage.TotalTokens,
-			},
 		}
 	}
 
-	response := &llms.ContentResponse{Choices: choices}
+	response := &llms.ContentResponse{
+		Choices: choices,
+		Usage: llms.Usage{
+			PromptTokens:     result.Usage.PromptTokens,
+			CompletionTokens: result.Usage.CompletionTokens,
+			TotalTokens:      result.Usage.TotalTokens,
+			PromptTokensDetails: llms.PromptTokensDetail{
+				CachedTokens: result.Usage.PromptTokensDetails.CachedTokens,
+			},
+			CompletionTokensDetails: llms.CompletionTokensDetails{
+				ReasoningTokens: result.Usage.CompletionTokensDetails.ReasoningTokens,
+			},
+		},
+	}
 	if o.CallbacksHandler != nil {
 		o.CallbacksHandler.HandleLLMGenerateContentEnd(ctx, response)
 	}
@@ -209,14 +217,21 @@ func (o *Model) combineStreamingChatResponse(
 		Choices: []*llms.ContentChoice{
 			{},
 		},
+		Usage: llms.Usage{},
 	}
 
 	for streamResponse := range responseChan {
 		if streamResponse.Usage != nil {
-			response.Choices[0].GenerationInfo = map[string]any{
-				"CompletionTokens": streamResponse.Usage.CompletionTokens,
-				"PromptTokens":     streamResponse.Usage.PromptTokens,
-				"TotalTokens":      streamResponse.Usage.TotalTokens,
+			response.Usage = llms.Usage{
+				PromptTokens:     streamResponse.Usage.PromptTokens,
+				CompletionTokens: streamResponse.Usage.CompletionTokens,
+				TotalTokens:      streamResponse.Usage.TotalTokens,
+				PromptTokensDetails: llms.PromptTokensDetail{
+					CachedTokens: streamResponse.Usage.PromptTokens,
+				},
+				CompletionTokensDetails: llms.CompletionTokensDetails{
+					ReasoningTokens: streamResponse.Usage.CompletionTokens,
+				},
 			}
 		}
 

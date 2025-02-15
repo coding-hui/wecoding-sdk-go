@@ -188,11 +188,6 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 		choices[i] = &llms.ContentChoice{
 			Content:    c.Message.Content,
 			StopReason: fmt.Sprint(c.FinishReason),
-			GenerationInfo: map[string]any{
-				"CompletionTokens": result.Usage.CompletionTokens,
-				"PromptTokens":     result.Usage.PromptTokens,
-				"TotalTokens":      result.Usage.TotalTokens,
-			},
 		}
 
 		// Legacy function call handling
@@ -217,7 +212,10 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 			choices[i].FuncCall = choices[i].ToolCalls[0].FunctionCall
 		}
 	}
-	response := &llms.ContentResponse{Choices: choices}
+	response := &llms.ContentResponse{
+		Choices: choices,
+		Usage:   getUsage(&result.Usage),
+	}
 	if o.CallbacksHandler != nil {
 		o.CallbacksHandler.HandleLLMGenerateContentEnd(ctx, response)
 	}
@@ -282,15 +280,12 @@ func (o *Model) combineStreamingChatResponse(
 		Choices: []*llms.ContentChoice{
 			{},
 		},
+		Usage: llms.Usage{},
 	}
 
 	for streamResponse := range responseChan {
 		if streamResponse.Usage != nil {
-			response.Choices[0].GenerationInfo = map[string]any{
-				"CompletionTokens": streamResponse.Usage.CompletionTokens,
-				"PromptTokens":     streamResponse.Usage.PromptTokens,
-				"TotalTokens":      streamResponse.Usage.TotalTokens,
-			}
+			response.Usage = getUsage(streamResponse.Usage)
 		}
 
 		if len(streamResponse.Choices) == 0 {
@@ -435,4 +430,32 @@ func getEnvs(keys ...string) string {
 
 func isAzureApi(apiType APIType) bool {
 	return apiType == APITypeAzure || apiType == APITypeAzureAD
+}
+
+func getUsage(res *sdk.Usage) llms.Usage {
+	if res == nil {
+		return llms.Usage{}
+	}
+
+	usage := llms.Usage{
+		PromptTokens:            res.PromptTokens,
+		CompletionTokens:        res.CompletionTokens,
+		TotalTokens:             res.TotalTokens,
+		PromptTokensDetails:     llms.PromptTokensDetail{},
+		CompletionTokensDetails: llms.CompletionTokensDetails{},
+	}
+
+	if res.PromptTokensDetails != nil {
+		usage.PromptTokensDetails = llms.PromptTokensDetail{
+			CachedTokens: res.PromptTokensDetails.CachedTokens,
+		}
+	}
+
+	if res.CompletionTokensDetails != nil {
+		usage.CompletionTokensDetails = llms.CompletionTokensDetails{
+			ReasoningTokens: res.CompletionTokensDetails.ReasoningTokens,
+		}
+	}
+
+	return usage
 }
