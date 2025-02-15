@@ -52,7 +52,7 @@ func TestGetBufferString(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			result, err := GetBufferString(tc.messages, tc.humanPrefix, tc.aiPrefix)
+			result, err := GetBufferString(tc.messages, "", tc.humanPrefix, tc.aiPrefix)
 			if (err != nil) != tc.expectError {
 				t.Fatalf("expected error: %v, got: %v", tc.expectError, err)
 			}
