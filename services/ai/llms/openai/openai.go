@@ -458,7 +458,7 @@ func getUsage(res *sdk.Usage, startTime time.Time, firstTokenTime time.Duration)
 	usage := llms.Usage{
 		TotalTime:               totalDuration,
 		FirstTokenTime:          firstTokenTime,
-		AverageTokensPerSecond:  float64(res.TotalTokens) / time.Since(startTime).Seconds(),
+		AverageTokensPerSecond:  float64(res.CompletionTokens) / time.Since(startTime).Seconds(),
 		PromptTokens:            res.PromptTokens,
 		CompletionTokens:        res.CompletionTokens,
 		TotalTokens:             res.TotalTokens,

@@ -145,7 +145,7 @@ func (o *Model) GenerateContent(ctx context.Context, messages []llms.MessageCont
 		Usage: llms.Usage{
 			TotalTime:              totalDuration,
 			FirstTokenTime:         totalDuration,
-			AverageTokensPerSecond: float64(result.Usage.TotalTokens) / totalDuration.Seconds(),
+			AverageTokensPerSecond: float64(result.Usage.CompletionTokens) / totalDuration.Seconds(),
 			PromptTokens:           result.Usage.PromptTokens,
 			CompletionTokens:       result.Usage.CompletionTokens,
 			TotalTokens:            result.Usage.TotalTokens,
@@ -274,7 +274,7 @@ func (o *Model) combineStreamingChatResponse(
 
 	response.Usage.TotalTime = time.Since(startTime)
 	if response.Usage.TotalTime.Seconds() > 0 {
-		response.Usage.AverageTokensPerSecond = float64(response.Usage.TotalTokens) / response.Usage.TotalTime.Seconds()
+		response.Usage.AverageTokensPerSecond = float64(response.Usage.CompletionTokens) / response.Usage.TotalTime.Seconds()
 	}
 
 	return &response, nil
