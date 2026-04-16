@@ -30,8 +30,8 @@ type ClientContentConfig struct {
 	Username string
 	Password string
 
-	SecretID  string
-	SecretKey string
+	AccessKeyId     string
+	SecretAccessKey string
 	// Server requires Bearer authentication. This client will not attempt to use
 	// refresh tokens for an OAuth2 flow.
 	// TODO: demonstrate an OAuth2 compatible client.
@@ -67,7 +67,7 @@ func (c *ClientContentConfig) HasTokenAuth() bool {
 
 // HasKeyAuth returns whether the configuration has secretId/secretKey authentication or not.
 func (c *ClientContentConfig) HasKeyAuth() bool {
-	return len(c.SecretID) != 0 && len(c.SecretKey) != 0
+	return len(c.AccessKeyId) != 0 && len(c.SecretAccessKey) != 0
 }
 
 // TLSConfig holds the information needed to set up a TLS transport.

@@ -19,7 +19,7 @@ var (
 
 	// ErrEmptyConfig defines no configuration has been provided error.
 	ErrEmptyConfig = NewEmptyConfigError(
-		"no configuration has been provided, try setting IAM_SERVER_ADDRESS environment variable",
+		"no configuration has been provided, try setting IAM_ENDPOINT, IAM_API_SERVER_ENDPOINT, or IAM_AUTHZ_ENDPOINT environment variable",
 	)
 
 	// ErrEmptyServer defines a no server defined error.
@@ -173,7 +173,7 @@ func validateAuthInfo(authInfo AuthInfo) []error {
 		methods = append(methods, "basicAuth")
 	}
 
-	if len(authInfo.SecretID) != 0 || len(authInfo.SecretKey) != 0 {
+	if len(authInfo.AccessKeyId) != 0 || len(authInfo.SecretAccessKey) != 0 {
 		methods = append(methods, "secretAuth")
 	}
 

@@ -35,8 +35,8 @@ type Config struct {
 	Username string
 	Password string
 
-	SecretID  string
-	SecretKey string
+	AccessKeyId     string
+	SecretAccessKey string
 
 	// Server requires Bearer authentication. This client will not attempt to use
 	// refresh tokens for an OAuth2 flow.
@@ -57,6 +57,13 @@ type Config struct {
 	Timeout       time.Duration
 	MaxRetries    int
 	RetryInterval time.Duration
+
+	// APIServerEndpoint is the endpoint for the API server.
+	// If set, it overrides Host for APIV1Client.
+	APIServerEndpoint string
+	// AuthzEndpoint is the endpoint for the Authz server.
+	// If set, it overrides Host for AuthzV1Client.
+	AuthzEndpoint string
 }
 
 // ContentConfig defines config for content.
@@ -93,8 +100,8 @@ func (c *Config) String() string {
 		cc.BearerToken = "--- REDACTED ---"
 	}
 
-	if cc.SecretKey != "" {
-		cc.SecretKey = "--- REDACTED ---"
+	if cc.SecretAccessKey != "" {
+		cc.SecretAccessKey = "--- REDACTED ---"
 	}
 
 	return fmt.Sprintf("%#v", cc)
@@ -222,8 +229,8 @@ func RESTClientFor(config *Config) (*RESTClient, error) {
 	clientContent := ClientContentConfig{
 		Username:           config.Username,
 		Password:           config.Password,
-		SecretID:           config.SecretID,
-		SecretKey:          config.SecretKey,
+		AccessKeyId:        config.AccessKeyId,
+		SecretAccessKey:    config.SecretAccessKey,
 		BearerToken:        config.BearerToken,
 		BearerTokenFile:    config.BearerTokenFile,
 		TLSClientConfig:    config.TLSClientConfig,
@@ -432,15 +439,15 @@ func AddUserAgent(config *Config, userAgent string) *Config {
 // CopyConfig returns a copy of the given config.
 func CopyConfig(config *Config) *Config {
 	return &Config{
-		Host:            config.Host,
-		APIPath:         config.APIPath,
-		ContentConfig:   config.ContentConfig,
-		Username:        config.Username,
-		Password:        config.Password,
-		SecretID:        config.SecretID,
-		SecretKey:       config.SecretKey,
-		BearerToken:     config.BearerToken,
-		BearerTokenFile: config.BearerTokenFile,
+		Host:               config.Host,
+		APIPath:            config.APIPath,
+		ContentConfig:      config.ContentConfig,
+		Username:           config.Username,
+		Password:           config.Password,
+		AccessKeyId:           config.AccessKeyId,
+		SecretAccessKey:          config.SecretAccessKey,
+		BearerToken:        config.BearerToken,
+		BearerTokenFile:    config.BearerTokenFile,
 		TLSClientConfig: TLSClientConfig{
 			Insecure:   config.TLSClientConfig.Insecure,
 			ServerName: config.TLSClientConfig.ServerName,
@@ -452,7 +459,11 @@ func CopyConfig(config *Config) *Config {
 			CAData:     config.TLSClientConfig.CAData,
 			NextProtos: config.TLSClientConfig.NextProtos,
 		},
-		UserAgent: config.UserAgent,
-		Timeout:   config.Timeout,
+		UserAgent:          config.UserAgent,
+		Timeout:            config.Timeout,
+		MaxRetries:         config.MaxRetries,
+		RetryInterval:      config.RetryInterval,
+		APIServerEndpoint:  config.APIServerEndpoint,
+		AuthzEndpoint:      config.AuthzEndpoint,
 	}
 }

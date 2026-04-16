@@ -51,14 +51,14 @@ func applyEnvDefaults(c *Config) {
 			c.AuthzEndpoint = v
 		}
 	}
-	if c.Username == "" && c.SecretID == "" {
+	if c.Username == "" && c.AccessKeyId == "" {
 		if v := os.Getenv(envAccessKeyId); v != "" {
-			c.SecretID = v
+			c.AccessKeyId = v
 		}
 	}
-	if c.Password == "" && c.SecretKey == "" {
+	if c.Password == "" && c.SecretAccessKey == "" {
 		if v := os.Getenv(envSecretAccessKey); v != "" {
-			c.SecretKey = v
+			c.SecretAccessKey = v
 		}
 	}
 }
@@ -94,22 +94,22 @@ func WithAuthzEndpoint(addr string) ConfigOption {
 // WithCredentials sets the access key ID and secret access key.
 func WithCredentials(accessKeyId, secretAccessKey string) ConfigOption {
 	return func(c *Config) {
-		c.SecretID = accessKeyId
-		c.SecretKey = secretAccessKey
+		c.AccessKeyId = accessKeyId
+		c.SecretAccessKey = secretAccessKey
 	}
 }
 
 // WithAccessKeyId sets the access key ID.
 func WithAccessKeyId(id string) ConfigOption {
 	return func(c *Config) {
-		c.SecretID = id
+		c.AccessKeyId = id
 	}
 }
 
 // WithSecretAccessKey sets the secret access key.
 func WithSecretAccessKey(key string) ConfigOption {
 	return func(c *Config) {
-		c.SecretKey = key
+		c.SecretAccessKey = key
 	}
 }
 

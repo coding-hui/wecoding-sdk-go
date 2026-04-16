@@ -15,40 +15,46 @@ import (
 type Server struct {
 	LocationOfOrigin string
 	Timeout          time.Duration `yaml:"timeout,omitempty"                    mapstructure:"timeout,omitempty"`
-	MaxRetries       int           `yaml:"max-retries,omitempty"                mapstructure:"max-retries,omitempty"`
-	RetryInterval    time.Duration `yaml:"retry-interval,omitempty"             mapstructure:"retry-interval,omitempty"`
-	Address          string        `yaml:"address,omitempty"                    mapstructure:"address,omitempty"`
+	MaxRetries       int           `yaml:"maxRetries,omitempty"                mapstructure:"maxRetries,omitempty"`
+	RetryInterval    time.Duration `yaml:"retryInterval,omitempty"             mapstructure:"retryInterval,omitempty"`
+	// Endpoint is the primary endpoint for the server.
+	Endpoint string `yaml:"endpoint,omitempty"                    mapstructure:"endpoint,omitempty"`
+	// APIServerEndpoint is the endpoint for the API server.
+	APIServerEndpoint string `yaml:"apiServerEndpoint,omitempty"               mapstructure:"apiServerEndpoint,omitempty"`
+	// AuthzEndpoint is the endpoint for the Authz server.
+	AuthzEndpoint string `yaml:"authzEndpoint,omitempty"               mapstructure:"authzEndpoint,omitempty"`
+
 	// TLSServerName is used to check server certificate. If TLSServerName is empty, the hostname used to contact the
 	// server is used.
 	// +optional
-	TLSServerName string `yaml:"tls-server-name,omitempty"            mapstructure:"tls-server-name,omitempty"`
+	TLSServerName string `yaml:"tlsServerName,omitempty"            mapstructure:"tlsServerName,omitempty"`
 	// InsecureSkipTLSVerify skips the validity check for the server's certificate. This will make your HTTPS
 	// connections insecure.
 	// +optional
-	InsecureSkipTLSVerify bool `yaml:"insecure-skip-tls-verify,omitempty"   mapstructure:"insecure-skip-tls-verify,omitempty"`
+	InsecureSkipTLSVerify bool `yaml:"insecureSkipTLSVerify,omitempty"   mapstructure:"insecureSkipTLSVerify,omitempty"`
 	// CertificateAuthority is the path to a cert file for the certificate authority.
 	// +optional
-	CertificateAuthority string `yaml:"certificate-authority,omitempty"      mapstructure:"certificate-authority,omitempty"`
+	CertificateAuthority string `yaml:"certificateAuthority,omitempty"      mapstructure:"certificateAuthority,omitempty"`
 	// CertificateAuthorityData contains PEM-encoded certificate authority certificates.
 	// Overrides CertificateAuthority
 	// +optional
-	CertificateAuthorityData string `yaml:"certificate-authority-data,omitempty" mapstructure:"certificate-authority-data,omitempty"`
+	CertificateAuthorityData string `yaml:"certificateAuthorityData,omitempty" mapstructure:"certificateAuthorityData,omitempty"`
 }
 
-// AuthInfo contains information that describes identity information.
+// Credentials contains information that describes identity information.
 // This is use to tell the iam cluster who you are.
-type AuthInfo struct {
+type Credentials struct {
 	LocationOfOrigin  string
-	ClientCertificate string `yaml:"client-certificate,omitempty"      mapstructure:"client-certificate,omitempty"`
+	ClientCertificate string `yaml:"clientCertificate,omitempty"         mapstructure:"clientCertificate,omitempty"`
 	// ClientCertificateData contains PEM-encoded data from a client cert file for TLS. Overrides ClientCertificate
 	// +optional
-	ClientCertificateData string `yaml:"client-certificate-data,omitempty" mapstructure:"client-certificate-data,omitempty"`
+	ClientCertificateData string `yaml:"clientCertificateData,omitempty"   mapstructure:"clientCertificateData,omitempty"`
 	// ClientKey is the path to a client key file for TLS.
 	// +optional
-	ClientKey string `yaml:"client-key,omitempty"              mapstructure:"client-key,omitempty"`
+	ClientKey string `yaml:"clientKey,omitempty"              mapstructure:"clientKey,omitempty"`
 	// ClientKeyData contains PEM-encoded data from a client key file for TLS. Overrides ClientKey
 	// +optional
-	ClientKeyData string `yaml:"client-key-data,omitempty"         mapstructure:"client-key-data,omitempty"`
+	ClientKeyData string `yaml:"clientKeyData,omitempty"         mapstructure:"clientKeyData,omitempty"`
 	// Token is the bearer token for authentication to the iam cluster.
 	// +optional
 	Token string `yaml:"token,omitempty"                   mapstructure:"token,omitempty"`
@@ -56,22 +62,27 @@ type AuthInfo struct {
 	Username string `yaml:"username,omitempty" mapstructure:"username,omitempty"`
 	Password string `yaml:"password,omitempty" mapstructure:"password,omitempty"`
 
-	SecretID  string `yaml:"secret-id,omitempty"  mapstructure:"secret-id,omitempty"`
-	SecretKey string `yaml:"secret-key,omitempty" mapstructure:"secret-key,omitempty"`
+	// AccessKeyId is the AWS-style access key ID.
+	AccessKeyId string `yaml:"accessKeyId,omitempty" mapstructure:"accessKeyId,omitempty"`
+	// SecretAccessKey is the AWS-style secret access key.
+	SecretAccessKey string `yaml:"secretAccessKey,omitempty" mapstructure:"secretAccessKey,omitempty"`
 }
+
+// AuthInfo is an alias for Credentials for backward compatibility.
+type AuthInfo = Credentials
 
 // Config defines a config struct used by marmotedu-sdk-go.
 type Config struct {
-	APIVersion string    `yaml:"apiVersion,omitempty" mapstructure:"apiVersion,omitempty"`
-	AuthInfo   *AuthInfo `yaml:"user,omitempty"       mapstructure:"user,omitempty"`
-	Server     *Server   `yaml:"server,omitempty"     mapstructure:"server,omitempty"`
+	APIVersion  string       `yaml:"apiVersion,omitempty" mapstructure:"apiVersion,omitempty"`
+	Credentials *Credentials `yaml:"credentials,omitempty" mapstructure:"credentials,omitempty"`
+	Server      *Server      `yaml:"server,omitempty"     mapstructure:"server,omitempty"`
 }
 
 // NewConfig is a convenience function that returns a new Config object with non-nil maps.
 func NewConfig() *Config {
 	return &Config{
-		Server:   &Server{},
-		AuthInfo: &AuthInfo{},
+		Server:      &Server{},
+		Credentials: &Credentials{},
 	}
 }
 
@@ -122,15 +133,17 @@ func (config *DirectClientConfig) ClientConfig() (*restclient.Config, error) {
 	}
 
 	clientConfig := &restclient.Config{
-		BearerToken:   user.Token,
-		Username:      user.Username,
-		Password:      user.Password,
-		SecretID:      user.SecretID,
-		SecretKey:     user.SecretKey,
-		Host:          server.Address,
+		BearerToken:        user.Token,
+		Username:           user.Username,
+		Password:           user.Password,
+		AccessKeyId:        user.AccessKeyId,
+		SecretAccessKey:    user.SecretAccessKey,
+		Host:               server.Endpoint,
 		Timeout:       server.Timeout,
 		MaxRetries:    server.MaxRetries,
 		RetryInterval: server.RetryInterval,
+		APIServerEndpoint: server.APIServerEndpoint,
+		AuthzEndpoint:    server.AuthzEndpoint,
 		TLSClientConfig: restclient.TLSClientConfig{
 			Insecure:   server.InsecureSkipTLSVerify,
 			ServerName: server.TLSServerName,
@@ -172,9 +185,9 @@ func (config *DirectClientConfig) ConfirmUsable() error {
 	return newErrConfigurationInvalid(validationErrors)
 }
 
-// getAuthInfo returns the clientcmdapi.AuthInfo, or an error if a required auth info is not found.
-func (config *DirectClientConfig) getAuthInfo() AuthInfo {
-	return *config.config.AuthInfo
+// getAuthInfo returns the Credentials, or an error if a required auth info is not found.
+func (config *DirectClientConfig) getAuthInfo() Credentials {
+	return *config.config.Credentials
 }
 
 // getServer returns the clientcmdapi.Cluster, or an error if a required cluster is not found.
@@ -194,7 +207,7 @@ func BuildConfigFromFlags(serverURL, iamconfigPath string) (*restclient.Config, 
 	}
 
 	if len(serverURL) > 0 {
-		config.Server.Address = serverURL
+		config.Server.Endpoint = serverURL
 	}
 
 	directClientConfig := &DirectClientConfig{*config}

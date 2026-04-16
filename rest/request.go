@@ -84,7 +84,7 @@ func NewRequest(c *RESTClient) *Request {
 	case c.content.HasTokenAuth():
 		r.SetHeader("Authorization", fmt.Sprintf("Bearer %s", c.content.BearerToken))
 	case c.content.HasKeyAuth():
-		tokenString := auth.Sign(c.content.SecretID, c.content.SecretKey, "iam-sdk-go", c.group+".wecoding.top")
+		tokenString := auth.Sign(c.content.AccessKeyId, c.content.SecretAccessKey, "iam-sdk-go", c.group+".wecoding.top")
 		r.SetHeader("Authorization", fmt.Sprintf("Bearer %s", tokenString))
 	case c.content.HasBasicAuth():
 		// TODO: get token and set header

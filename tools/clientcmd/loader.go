@@ -42,11 +42,11 @@ func LoadFromFile(filename string) (*Config, error) {
 	}
 
 	// set LocationOfOrigin on every Cluster, User, and Context
-	config.AuthInfo.LocationOfOrigin = filename
+	config.Credentials.LocationOfOrigin = filename
 	config.Server.LocationOfOrigin = filename
 
-	if config.AuthInfo == nil {
-		config.AuthInfo = &AuthInfo{}
+	if config.Credentials == nil {
+		config.Credentials = &Credentials{}
 	}
 
 	if config.Server == nil {

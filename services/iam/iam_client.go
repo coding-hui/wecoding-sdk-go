@@ -42,18 +42,29 @@ func (c *IamClient) AuthzV1WithConfig(config *rest.Config) (*authzv1.AuthzV1Clie
 
 // NewForConfig creates a new IamV1Client for the given config.
 func NewForConfig(c *rest.Config) (*IamClient, error) {
-	configShallowCopy := *c
+	apiCopy := *c
+	authzCopy := *c
+
+	// APIV1Client uses APIServerEndpoint if set, otherwise uses Host
+	if apiCopy.APIServerEndpoint != "" {
+		apiCopy.Host = apiCopy.APIServerEndpoint
+	}
+
+	// AuthzV1Client uses AuthzEndpoint if set, otherwise uses Host
+	if authzCopy.AuthzEndpoint != "" {
+		authzCopy.Host = authzCopy.AuthzEndpoint
+	}
 
 	var ic IamClient
 
 	var err error
 
-	ic.apiV1, err = apiv1.NewForConfig(&configShallowCopy)
+	ic.apiV1, err = apiv1.NewForConfig(&apiCopy)
 	if err != nil {
 		return nil, err
 	}
 
-	ic.authzV1, err = authzv1.NewForConfig(&configShallowCopy)
+	ic.authzV1, err = authzv1.NewForConfig(&authzCopy)
 	if err != nil {
 		return nil, err
 	}
