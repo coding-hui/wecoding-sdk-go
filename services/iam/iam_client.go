@@ -34,6 +34,12 @@ func (c *IamClient) AuthzV1() authzv1.AuthzV1Interface {
 	return c.authzV1
 }
 
+// AuthzV1WithConfig creates a new AuthzV1Client with a separate config.
+// This allows authzserver to use a different host/port than apiserver.
+func (c *IamClient) AuthzV1WithConfig(config *rest.Config) (*authzv1.AuthzV1Client, error) {
+	return authzv1.NewForConfig(config)
+}
+
 // NewForConfig creates a new IamV1Client for the given config.
 func NewForConfig(c *rest.Config) (*IamClient, error) {
 	configShallowCopy := *c
